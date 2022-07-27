@@ -1,0 +1,37 @@
+{
+  "name": "@pv-arcgis/services",
+  "version": "0.0.1",
+  "description": "> TODO: description",
+  "author": "liyb <liyanbin05@cnpc.com.cn>",
+  "homepage": "",
+  "license": "ISC",
+  "source": "src/index.ts",
+  "main": "dist/main.js",
+  "module": "dist/module.js",
+  "types": "dist/types.d.ts",
+  "directories": {
+    "lib": "dist",
+    "doc": "docs",
+    "example": "examples"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "parcel examples/index.html --open --dist-dir ./examples/dist -p 3002",
+    "build": "parcel build",
+    "doc": "typedoc"
+  },
+  "dependencies": {
+    "@pv-arcgis/core": "^0.0.1",
+    "esri-loader": "^3.5.0"
+  },
+  "devDependencies": {
+    "@parcel/packager-ts": "^2.6.0",
+    "@parcel/transformer-typescript-types": "^2.6.0",
+    "@types/arcgis-js-api": "^4.23.1",
+    "parcel": "^2.6.0",
+    "typedoc": "^0.23.5",
+    "typescript": "^4.7.2"
+  }
+}

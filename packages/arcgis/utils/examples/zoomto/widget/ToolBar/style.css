@@ -1,0 +1,20 @@
+#gistoolbar {
+    padding: 0;
+    background-color: white;
+    max-width: auto;
+}
+
+.esri-coordinate-conversion__select-row {
+    width: 100px;
+}
+
+ul {
+    padding-left: 0px;
+    margin: 5px 5px 5px 5px;
+    border: 0px 0px 0px 0px;
+}
+
+ul li {
+    margin: 5px 5px 5px 5px;
+    cursor: pointer;
+}

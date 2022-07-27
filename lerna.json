@@ -1,0 +1,34 @@
+{
+  "npmclient": "pnpm",
+  "packages": [
+    "packages/*",
+    "packages/arcgis/*",
+    "packages/leaflet/*",
+    "packages/openlayers/*",
+    "packages/mapbox/*",
+    "packages/MapGL/*"],
+    
+  "version": "independent",
+  "command": {
+    "conventionalCommits": true,
+    "message": "chore(release): ${nextRelease.version}",
+    "publish": {
+      "ignoreChanges": [
+        "**/.parcel-cache/**",
+        "**/coverage/**",
+        "**/dist/**",
+        "**/node_modules/**",
+        "**/tests/**",
+        "*.yaml",
+        "*.md",
+        "package.json"
+      ],
+      "allowBranch": "master"
+    },
+    "bootstrap": {
+      "ignore": [],
+      "scope": []
+    }
+  },
+  "ignoreChanges": ["**/node_modules/**", "**/examples/**"]
+}

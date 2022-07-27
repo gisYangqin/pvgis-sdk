@@ -1,0 +1,55 @@
+@import "https://js.arcgis.com/4.23/@arcgis/core/assets/esri/themes/light/main.css";
+
+html,
+body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+}
+
+.layout {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex: auto;
+    flex-direction: column;
+}
+
+.header {
+    height: 64px;
+    color: #fff;
+    background: #3ba0e9;
+    display: block;
+    flex: 0 0 auto;
+    padding: 0 50px;
+    font-size: 18px;
+    line-height: 64px;
+}
+
+.layout-has-sider {
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex: auto;
+}
+
+.sider {
+    flex: 0 0 200px;
+    max-width: 200px;
+    min-width: 200px;
+    width: 200px;
+    color: #fff;
+    line-height: 120px;
+    background: rgba(16, 142, 233, 1);
+}
+
+main{
+    flex: auto;
+}
+#mapDiv {
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}

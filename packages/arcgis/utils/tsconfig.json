@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+      "target": "ES2020",
+      "module": "ESNext",
+      "lib": ["ESNext", "DOM"],
+      "moduleResolution": "node",
+      "strict": true,
+      "sourceMap": true,
+      "resolveJsonModule": true,
+      "esModuleInterop": true,
+      "noUnusedLocals": true,
+      "noUnusedParameters": true,
+      "noImplicitReturns": true,
+      "preserveConstEnums": true,
+      "suppressImplicitAnyIndexErrors": true,
+      "experimentalDecorators": true,
+      "strictPropertyInitialization": false,  
+      "noImplicitAny": true,
+      "allowJs": true,
+      "jsx": "react",
+      "jsxFactory": "tsx",
+    },
+    "include": ["src/**/*","examples/**/*"],
+    "exclude": ["node_modules"],
+    "typedocOptions": {
+      "entryPoints": "src/index.ts",
+      "out": "docs"
+    }
+  }
