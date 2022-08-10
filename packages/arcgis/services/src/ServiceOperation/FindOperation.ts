@@ -2,14 +2,14 @@
  * @Author: YangQin yangqin03@cnpc.com.cn
  * @Date: 2022-07-07 18:12:06
  * @LastEditors: YangQin yangqin03@cnpc.com.cn
- * @LastEditTime: 2022-07-17 18:28:50
+ * @LastEditTime: 2022-08-10 22:17:23
  * @FilePath: \pv-gis-libs\packages\arcgis\services\src\ServiceOperation\FindOperation.ts
  * @Description:
  *
  * Copyright (c) 2022 by yangqin03@cnpc.com.cn, All Rights Reserved.
  */
 
-import { ServiceResquest } from './base'
+import { ObjectEscapString, ServiceResquest } from './base'
 
 class FindOperation extends ServiceResquest {
   //搜索文本 用户指定的用于通过图层和字段搜索的字符串
@@ -21,9 +21,10 @@ class FindOperation extends ServiceResquest {
   //搜索字段 字段名称列表，如果不指定，则搜索全部字段
   private _searchFields: string[]
 
-  constructor(url: string) {
-    super(url)
-    this._declaredClass = 'pv-arcgis.service.ServiceOperation'
+  constructor(url: string, searchText: string, layers: number[]) {
+    super(url, layers)
+    this._searchText = searchText
+    this._declaredClass = 'pv-arcgis.service.FindOperation'
   }
 
   get SearchText(): string {
@@ -32,26 +33,12 @@ class FindOperation extends ServiceResquest {
   set SearchText(newValue: string) {
     this._searchText = newValue
   }
-  private SearchTextEscap(): string {
-    if (this._searchText && this._searchText.length > 0) {
-      return 'searchText=' + this._searchText + '&'
-    } else {
-      return ''
-    }
-  }
 
   get Contains(): boolean {
     return this._contains
   }
   set Contains(newVlaue: boolean) {
     this._contains = newVlaue
-  }
-  private ContainsEscap(): string {
-    if (this._contains) {
-      return ''
-    } else {
-      return 'contains=false&'
-    }
   }
 
   get SearchFields(): string[] {
@@ -60,21 +47,14 @@ class FindOperation extends ServiceResquest {
   set SearchFields(newValue: string[]) {
     this._searchFields = newValue
   }
-  private SearchFieldsEscap(): string {
-    if (this._searchFields.length === 0) {
-      return ''
-    }
-    let ss = 'searchFields='
-    this._searchFields.forEach((field) => {
-      ss += field + ','
-    })
-    return ss.substring(0, ss.length - 1) + '&'
-  }
 
-  async excute(): Promise<unknown> {
-    const url = this.getResquestUrl()
-    const respone = await fetch(url)
-    return respone.json()
+  protected escap(): string {
+    const object = {
+      searchText: this._searchText,
+      contains: this._contains,
+      searchFields: this._searchFields,
+    }
+    return ObjectEscapString(object) + super.escap()
   }
 
   getParameterObject(): unknown {
@@ -83,19 +63,12 @@ class FindOperation extends ServiceResquest {
 
   protected getResquestUrl(): string {
     let resquestUrl = this.url + '/find?'
-
     try {
-      resquestUrl +=
-        this.SearchTextEscap() + this.ContainsEscap() + this.SearchFieldsEscap()
-      resquestUrl += super.getResquestUrl()
+      resquestUrl += this.escap()
     } catch (error) {
       throw error
     }
     return resquestUrl
-  }
-
-  sr() {
-    return `${this.Fromat}`
   }
 }
 

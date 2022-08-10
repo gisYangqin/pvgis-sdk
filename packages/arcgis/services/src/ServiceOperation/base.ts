@@ -2,7 +2,7 @@
  * @Author: YangQin yangqin03@cnpc.com.cn
  * @Date: 2022-07-07 21:41:58
  * @LastEditors: YangQin yangqin03@cnpc.com.cn
- * @LastEditTime: 2022-07-17 22:34:27
+ * @LastEditTime: 2022-08-10 23:54:25
  * @FilePath: \pv-gis-libs\packages\arcgis\services\src\ServiceOperation\base.ts
  * @Description:
  *
@@ -13,6 +13,9 @@ import {
   ResquestFormatType,
   type DynamicLayer,
   EsriGeometryType,
+  type LayerRangeValue,
+  type LayerParameterValue,
+  MapRangeValue,
 } from './type'
 
 abstract class ServiceResquestBase {
@@ -35,7 +38,7 @@ abstract class ServiceResquestBase {
 
   // 是否返回M值 如果为true, 返回的要素中将会包含M值，否则M值将不会返回，默认为false
   // 该参数仅在returnGeometry=true时有效
-  private _returnM: boolean
+  private _returnM = false
 
   //数据库版本 切换地图图层到指定的备用地理数据库版本
   private _gdbVersion: string
@@ -115,7 +118,11 @@ abstract class ServiceResquestBase {
     return this._datumTransformations
   }
   set DatumTransformations(newValue: number[]) {
-    this._datumTransformations = newValue
+    if (newValue.length === 2) {
+      this._datumTransformations = newValue
+    } else {
+      throw new Error('parameter must be an array with lenght is 2')
+    }
   }
 
   get Fromat(): ResquestFormatType {
@@ -129,12 +136,30 @@ abstract class ServiceResquestBase {
     }
   }
 
-  abstract excute(): Promise<unknown>
+  async excute(): Promise<unknown> {
+    const url = this.getResquestUrl()
+    const respone = await fetch(url)
+    return respone.json()
+  }
+
   abstract getParameterObject(): unknown
-  protected abstract getResquestUrl(): unknown
+  protected abstract getResquestUrl(): string
+  protected escap(): string {
+    const object1 = {
+      returnGeometry: this._returnGeometry,
+      maxAllowableOffset: this._maxAllowableOffset,
+      datumTransformations: this._datumTransformations,
+      geometryPrecision: this._geometryPrecision,
+      returnZ: this._returnZ,
+      returnM: this._returnM,
+      gdbVersion: this._gdbVersion,
+      f: this._f,
+    }
+    return '&' + ObjectEscapString(object1)
+  }
 }
 
-class ServiceResquest extends ServiceResquestBase {
+abstract class ServiceResquest extends ServiceResquestBase {
   // 坐标系 输出几何的坐标系的well-know ID.
   private _sr: number
 
@@ -155,22 +180,21 @@ class ServiceResquest extends ServiceResquestBase {
   // 默认为false 如果图层具有连接，则将返回完全限定的字段名称
   private _returnFieldName = false
 
+  // 地图区间值 通过指定的区间范围或者单值，在导出地图时从所有图层过滤要素数据
+  private _mapRangeValues: MapRangeValue[]
+
+  // 图层区间值 通过指定的区间范围或单值，在单独的每个图层筛选要素
+  private _layerRangeValues: LayerRangeValue[]
+
   // 图层参数 通过图层的预先编写的参数化过滤器数组来过滤导出地图中各个图层的要素。如果没有为请求中的任何参数指定值，则会使用在创作期间分配的默认值。
   // 当parameterInfo允许多个值时，您必须将它们传递到数组中。
   // 注意：检查图层资源中的 parameterInfos 以获取可用的参数化过滤器、它们的默认值和预期的数据类型。
-  // 待实现
-  private _layerParameterValues: unknown
-
-  // 地图区间值 通过指定的区间范围或者单值，在导出地图时从所有图层过滤要素数据
-  // 待实现
-  private _mapRangeValues: unknown
-
-  // 图层区间值 通过指定的区间范围或单值，在单独的每个图层筛选要素
-  // 待实现
-  private _layerRangeValues: unknown
-
-  constructor(parameter: string) {
-    super(parameter)
+  private _layerParameterValues: LayerParameterValue[]
+  constructor(url: string, layers?: number[]) {
+    super(url)
+    if (layers) {
+      this._layers = layers
+    }
     this._declaredClass = 'pv-arcgis.service.ServiceResquest'
   }
 
@@ -217,29 +241,42 @@ class ServiceResquest extends ServiceResquestBase {
     return this._layerRangeValues
   }
 
-  excute(): Promise<unknown> {
-    throw new Error('Method not implemented.')
-  }
   getParameterObject(): unknown {
     throw new Error('Method not implemented.')
   }
 
   protected getResquestUrl(): string {
-    return encodeURIComponent('ss')
-    return ''
+    throw new Error('Method not implemented.')
+  }
+
+  protected escap(): string {
+    const object = {
+      sr: this._sr,
+      layerDefs: LayerDefsEscapString(this._layerDefs),
+      layers: ObjectEscapString(this._layers),
+      dynamicLayers: this._dynamicLayers,
+      returnUnformattedValues: this._returnUnformattedValues,
+      returnFieldName: this._returnFieldName,
+      mapRangeValues: this._mapRangeValues,
+      layerRangeValues: layerRangeValuesString(this._layerRangeValues),
+      layerParameterValues: layerParameterEscapString(
+        this._layerParameterValues
+      ),
+    }
+    return '&' + ObjectEscapString(object) + super.escap()
   }
 }
 
-class LayerResquest extends ServiceResquestBase {
+abstract class LayerResquest extends ServiceResquestBase {
   // 几何图形 作为空间过滤器应用的几何图形
   private _geometry: string
   // 几何类型 几何图形指定的几何类型，可以是信封区，点，线，多边形。默认是信封区
-  private _geometryType = EsriGeometryType.esriGeometryEnvelope
+  private _geometryType = EsriGeometryType.Envelope
   // 时间 要查询的时刻或时间范围。
   private _time: number | number[]
 
-  constructor(parameter: string) {
-    super(parameter)
+  constructor(url: string) {
+    super(url)
     this._declaredClass = 'pv-arcgis.service.LayerResquest'
   }
 
@@ -264,15 +301,160 @@ class LayerResquest extends ServiceResquestBase {
     this._time = newValue
   }
 
-  excute(): Promise<unknown> {
-    throw new Error('Method not implemented.')
-  }
   getParameterObject(): unknown {
     throw new Error('Method not implemented.')
   }
 
-  getResquestUrl(): unknown {
+  protected getResquestUrl(): string {
     throw new Error('Method not implemented.')
   }
+
+  protected escap(): string {
+    const object = {
+      geometry: this._geometry,
+      geometryType: this._geometryType,
+      time: this._time,
+    }
+    return '&' + ObjectEscapString(object) + super.escap()
+  }
 }
-export { ServiceResquestBase, ServiceResquest, LayerResquest }
+
+// 转义一个对象为字符串，支持输入基本类型和object对象
+// 用法：
+// let a='aaa'
+// let b=true
+// let c=123
+// let d=[1,2,3,4]
+// let e={
+//     a:1,
+//     b:'b',
+//     c:true,
+//     d:{
+//         d1:'111',
+//         d2:21
+//     }
+// }
+// console.log('a:', ObjectEscapString(a))
+// //a: aaa
+// console.log('b:', ObjectEscapString(b))
+// //b: true
+// console.log('c:', ObjectEscapString(c))
+// //c: 123
+// console.log('d:', ObjectEscapString(d))
+// //d: [1,2,3,4]
+// console.log('e:', ObjectEscapString(e))
+// //e: {a=1&b=b&c=true&d={d1=111&d2=21}}
+function ObjectEscapString<T>(valueObject: T, isTop?: boolean): string {
+  if (isTop === undefined) {
+    isTop = true
+  }
+  let connector = [':', ',', '"']
+  if (isTop) {
+    connector = ['=', '&', '']
+  }
+
+  if (typeof valueObject === 'boolean') {
+    return encodeURIComponent(valueObject)
+  }
+  if (typeof valueObject === 'number') {
+    return encodeURIComponent(valueObject)
+  }
+  if (typeof valueObject === 'string') {
+    return encodeURIComponent(valueObject)
+  }
+
+  if (typeof valueObject === 'object') {
+    if (Array.isArray(valueObject)) {
+      const values = Object.values(valueObject)
+      if (isTop) {
+        return values.join(',')
+      } else {
+        return '[' + values.join(',') + ']'
+      }
+    }
+    const keys = Object.keys(valueObject)
+    let objectString = ''
+    keys.forEach((k) => {
+      objectString += connector[2] + k.toString() + connector[2] + connector[0]
+      let escapstring = ObjectEscapString(valueObject[k], false)
+      if (typeof valueObject[k] === 'string') {
+        escapstring = connector[2] + escapstring + connector[2]
+      }
+      objectString += escapstring + connector[1]
+    })
+
+    if (isTop) {
+      return objectString.substring(0, objectString.length - 1)
+    } else {
+      return '{' + objectString.substring(0, objectString.length - 1) + '}'
+    }
+  }
+  return ''
+}
+
+// 转义LayerDefine类型为字符串
+function LayerDefsEscapString(layerDefs: LayerDefine[]): string {
+  const layerdefString: string[] = []
+  if (!layerDefs) {
+    return ''
+  }
+  layerDefs.forEach((layerDef) => {
+    layerdefString.push(`"${layerDef.layerID}":"${layerDef.filterSQL}"`)
+  })
+  return '{' + layerdefString.join(',') + '}'
+}
+
+// 转义LayerRangeValue类型为字符串
+function layerRangeValuesString(layerRangeValues: LayerRangeValue[]): string {
+  const layerRangeValueString: string[] = []
+  if (!layerRangeValues) {
+    return ''
+  }
+  layerRangeValues.forEach((layerRangeValue) => {
+    layerRangeValueString.push(
+      `"${layerRangeValue.layerIDName}":` +
+        ObjectEscapString(layerRangeValue.mapRangeValues, false)
+    )
+  })
+  return '{' + layerRangeValueString.join(',') + '}'
+}
+
+// 转义LayerParameterValue类型为字符串
+function layerParameterEscapString(
+  layerParameterValues: LayerParameterValue[]
+): string {
+  const layerParameterValueString: string[] = []
+  if (!layerParameterValues) {
+    return ''
+  }
+  layerParameterValues.forEach((layerParameterValue) => {
+    const layerRangeValueString: string[] = []
+    if (layerParameterValue.layerRangeValues) {
+      layerParameterValue.layerRangeValues.forEach((layerRangeValue) => {
+        const mapRangeValueString: string[] = []
+        if (layerRangeValue.mapRangeValues) {
+          layerRangeValue.mapRangeValues.forEach((mapRangeValue) => {
+            mapRangeValueString.push(
+              `"${mapRangeValue.name}":` +
+                ObjectEscapString(mapRangeValue.value, false)
+            )
+          })
+          layerRangeValueString.push(
+            `"${layerRangeValue.layerIDName}":{` +
+              mapRangeValueString.join(',') +
+              '}'
+          )
+        }
+      })
+    }
+    layerParameterValueString.push(layerRangeValueString.join(','))
+  })
+  return '[' + layerParameterValueString.join(',') + ']'
+}
+
+export {
+  ServiceResquestBase,
+  ServiceResquest,
+  LayerResquest,
+  ObjectEscapString,
+}
